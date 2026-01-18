@@ -9,11 +9,11 @@
         body { background: #171615; color: #fff; text-align: center; font-family: sans-serif; }
         .control-panel { background: #28276d; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 600px; }
         .q-display { background: #ebcf9f; padding: 15px; border-radius: 10px; margin: 20px 0; min-height: 100px; color: #333; }
-        .btn-main { background: #df2b2b; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; }
+        .btn-main { background: #2da551; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; }
         .btn-sub { background: #6d7175; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; }
         /* 統計按鈕樣式 */
         .btn-calc { background: #ffc107; color: black; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; font-weight: bold; display: none; }
-        #winner-box { background: gold; color: black; padding: 20px; border-radius: 15px; display: none; margin-top: 20px; animation: pulse 2s infinite; }
+        #winner-box { background: #df2b2b; color: #f6e6c9; padding: 20px; border-radius: 15px; display: none; margin-top: 20px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
@@ -71,18 +71,18 @@
             { r: "第一輪 (7/8)", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
             { r: "第一輪 (8/8)", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
             { r: "休息一下沒有進廣告", q: "誰是目前的怪咖？", a: "", b: "" }, // Index 9
-            { r: "第二輪 (1/8)", q: "安靜處必放大屁\n vs \n一輩子拿基本工資", a: "哪一個比較好呢...", b: "" },
-            { r: "第二輪 (2/8)", q: "超正/帥但超臭\n vs \n爆醜但自帶香味", a: "哪一個比較好呢...", b: "" },
-            { r: "第二輪 (3/8)", q: "尷尬時刻 慢動作 + 鋼琴悲歌 \n vs \n 失敗時 罐頭笑聲", a: "自帶BGM", b: "" },
-            { r: "第二輪 (4/8)", q: "永遠關不住的門\n vs \n卡住的半開玻璃窗", a: "", b: "" },
-            { r: "第二輪 (5/8)", q: "課堂簡報是圖片檔+配色超難看\n vs \n沒課本+課後不給你簡報檔", a: "", b: "" },
-            { r: "第二輪 (6/8)", q: "上課滿滿pua的環境工程 \n vs \n當掉一半學生的流體力學", a: "", b: "" },
-            { r: "第二輪 (7/8)", q: "坐超臭同學旁邊 \n vs \n教授每堂一定抽問", a: "", b: "" },
-            { r: "第二輪 (8/8)", q: "只有43度冰水的飲水機 \n vs \n冷氣壞掉的教室上三小時課", a: "", b: "" },
+            { r: "第二輪", q: "哪種比較好呢？", a: "安靜處必放大屁", b: "一輩子拿基本工資" },
+            { r: "第二輪", q: "外型與氣味？", a: "超好看但極臭", b: "醜但自帶香味" },
+            { r: "第二輪", q: "人生背景音？", a: "尷尬時有悲情鋼琴", b: "失敗時有罐頭笑聲" },
+            { r: "第二輪", q: "房間缺陷？", a: "門關不起來", b: "窗戶卡住半開" },
+            { r: "第二輪", q: "簡報酷刑？", a: "圖片檔且配色難看", b: "不給課後檔案" },
+            { r: "第二輪", q: "魔鬼課程？", a: "PUA環境工程", b: "當掉一半的流體力學" },
+            { r: "第二輪", q: "上課地獄？", a: "坐超臭同學旁邊", b: "教授每堂必抽問" },
+            { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" },
             { r: "最終結算", q: "究極怪咖王？！", a: "", b: "" } // Index 18
         ];
 
-        // 核心邏輯：計算誰選了最多「少數派」
+        /* 核心邏輯：計算誰選了最多「少數派」
         async function getWinner(untilStep) {
             const snapshot = await get(ref(db, 'votes'));
             if (!snapshot.exists()) return "無數據";
@@ -123,7 +123,74 @@
             if (step === 18) result = await getWinner(17);
             
             winnerName.innerText = result;
-        };
+        };*/
+
+        // 核心邏輯：計算怪咖並抓取其選擇紀錄
+        async function getWinner(untilStep) {
+            const snapshot = await get(ref(db, 'votes'));
+            if (!snapshot.exists()) return { name: "無數據", history: "" };
+    
+            const allVotes = snapshot.val();
+            let userMinorityCount = {};
+        
+            // 1. 先算出誰是怪咖
+            for (let i = 1; i <= untilStep; i++) {
+                if (!allVotes[i]) continue;
+                let votes = allVotes[i];
+                let countA = 0, countB = 0;
+                for (let name in votes) {
+                    if (votes[name].choice === 'A') countA++; else countB++;
+                }
+                let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
+                if (minorityChoice) {
+                    for (let name in votes) {
+                        if (votes[name].choice === minorityChoice) {
+                            userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
+                        }
+                    }
+                }
+            }
+        
+            if (Object.keys(userMinorityCount).length === 0) return { name: "大家都很正常", history: "" };
+        
+            // 找出最高分者
+            let winner = Object.keys(userMinorityCount).reduce((a, b) => userMinorityCount[a] > userMinorityCount[b] ? a : b);
+                
+            // 2. 抓取這位贏家的歷史選擇紀錄
+            let historyHtml = "<div style='font-size: 1rem; text-align: left; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px;'>";
+            historyHtml += "<b>他的奇葩選擇：</b><br>";
+            
+            for (let i = 1; i <= untilStep; i++) {
+                if (allVotes[i] && allVotes[i][winner]) {
+                    let choice = allVotes[i][winner].choice;
+                    // 根據索引找出該題目的選項文字
+                    let choiceText = choice === 'A' ? questions[i].a : questions[i].b;
+                    historyHtml += `第${i}題：${choice} (${choiceText})<br>`;
+                }
+            }
+            historyHtml += "</div>";
+        
+            return { 
+                name: `${winner} (共選了 ${userMinorityCount[winner]} 次少數選項)`, 
+                history: historyHtml 
+            };
+        }
+
+// 修改按鈕觸發函式
+window.triggerWinner = async () => {
+    const winnerBox = document.getElementById('winner-box');
+    const winnerName = document.getElementById('winner-name');
+    winnerBox.style.display = "block";
+    winnerName.innerHTML = "計算中..."; // 改用 innerHTML 因為要塞標籤
+    
+    let resultObj = { name: "", history: "" };
+    if (step === 9) resultObj = await getWinner(8);
+    if (step === 18) resultObj = await getWinner(17);
+    
+    // 顯示名字 + 歷史紀錄
+    winnerName.innerHTML = `<span style="font-size: 1.8rem;">${resultObj.name}</span>${resultObj.history}`;
+};
+
 
         window.nextStep = () => { 
             if (step < questions.length - 1) {
