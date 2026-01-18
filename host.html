@@ -1,78 +1,103 @@
 <!DOCTYPE html>
-<html>
-  <div id="host-control-panel">
-    <h1 id="step-display">等待玩家加入...</h1>
-    <button onclick="nextStep()" id="start-btn" style="background: #28a745; font-size: 2rem;">開始第一題</button>
-    <button onclick="prevStep()">回上一題</button>
-</div>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>晚會大冒險 - 主持人</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生工大劇場 - 誰是怪咖王</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #171615; color: #fff; text-align: center; font-family: sans-serif; }
+        .control-panel { background: #28276d; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 600px; }
+        .q-display { background: #ebcf9f; padding: 15px; border-radius: 10px; margin: 20px 0; min-height: 100px; color: #333; }
+        .btn-main { background: #df2b2b; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; }
+        .btn-sub { background: #6d7175; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; }
+        /* 統計按鈕樣式 */
+        .btn-calc { background: #ffc107; color: black; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; font-weight: bold; display: none; }
+        #winner-box { background: gold; color: black; padding: 20px; border-radius: 15px; display: none; margin-top: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
 </head>
-
 <body>
-    <h1>控制台</h1>
-    <h2 id="current-q">當前題目</h2>
-    
-    <hr>
-    <button onclick="calculateWinner()" style="background: #ff4757;">公布邊緣王 (得票最少者)</button>
-    <div id="result-display"></div>
+    <h1>生工大劇場 - 誰是怪咖王</h1>
+
+    <div class="control-panel">
+        <div class="q-display">
+            <h3 id="current-round" style="color: #4a4b94;"></h3>
+            <h1 id="current-q"></h1>
+            <p id="options-hint" style="color: #423d3d;"></p>
+        </div>
+
+        <div id="winner-box">
+            <h2 id="result-title"> 唯一且獨特的這群朋友們 </h2>
+            <h1 id="winner-name">---</h1>
+        </div>
+
+        <hr style="border: 0.5px solid #444; margin: 20px 0;">
+        
+        <button onclick="triggerWinner()" id="calc-btn" class="btn-calc">📊 統計誰是怪咖</button>
+        <br>
+        <button onclick="nextStep()" id="next-btn" class="btn-main">開始遊戲 ▶️</button>
+        <br>
+        <button onclick="prevStep()" class="btn-sub">⬅️ 回上一題</button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { 
-            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-            
-              apiKey: "AIzaSyB9utfozRJXaMj07hOCMrEKB_s1wKVfbFw",
-              authDomain: "bse-weirdoking.firebaseapp.com",
-              projectId: "bse-weirdoking",
-              storageBucket: "bse-weirdoking.firebasestorage.app",
-              messagingSenderId: "154551508057",
-              appId: "1:154551508057:web:47b1be7e7d76743788a548",
-              measurementId: "G-WL3E8V5H94",
-              databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
-            
-         };
+            apiKey: "AIzaSyB9utfozRJXaMj07hOCMrEKB_s1wKVfbFw",
+            authDomain: "bse-weirdoking.firebaseapp.com",
+            projectId: "bse-weirdoking",
+            storageBucket: "bse-weirdoking.firebasestorage.app",
+            messagingSenderId: "154551508057",
+            appId: "1:154551508057:web:47b1be7e7d76743788a548",
+            measurementId: "G-WL3E8V5H94",
+            databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
+        };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let step = 0;
 
-        window.nextStep = () => { step++; set(ref(db, 'gameState/currentStep'), step); };
-        window.prevStep = () => { if(step > 0) step--; set(ref(db, 'gameState/currentStep'), step); };
-
-        onValue(ref(db, 'gameState/currentStep'), (snap) => {
-            step = snap.val() || 0;
-           const display = document.getElementById('step-display');
-           const btn = document.getElementById('start-btn');
-    
-           if (step === 0) {
-               display.innerText = "現在是：報名階段";
-               btn.innerText = "正式開始遊戲 ▶️";
-           } else {
-               display.innerText = "目前在第 " + step + " 題";
-               btn.innerText = "下一題 ➡️";
-           }
-       });
+        const questions = [
+            { r: "準備中...", q: "請輸入名字", a: "", b: "" },
+            { r: "第一輪 (1/8)", q: "吃不吃香菜？", a: "吃", b: "不吃" },
+            { r: "第一輪 (2/8)", q: "滷肉飯拌不拌？", a: "拌", b: "不拌" },
+            { r: "第一輪 (3/8)", q: "咖哩拌不拌？", a: "拌", b: "不拌" },
+            { r: "第一輪 (4/8)", q: "火鍋芋頭加不加？", a: "加", b: "不加" },
+            { r: "第一輪 (5/8)", q: "全糖手搖喝不喝？", a: "喝", b: "不喝" },
+            { r: "第一輪 (6/8)", q: "奶茶種類？", a: "奶精奶茶", b: "鮮奶茶" },
+            { r: "第一輪 (7/8)", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
+            { r: "第一輪 (8/8)", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
+            { r: "休息一下沒有進廣告", q: "誰是目前的怪咖？", a: "", b: "" }, // Index 9
+            { r: "第二輪 (1/8)", q: "安靜處必放大屁\n vs \n一輩子拿基本工資", a: "哪一個比較好呢...", b: "" },
+            { r: "第二輪 (2/8)", q: "超正/帥但超臭\n vs \n爆醜但自帶香味", a: "哪一個比較好呢...", b: "" },
+            { r: "第二輪 (3/8)", q: "尷尬時刻 慢動作 + 鋼琴悲歌 \n vs \n 失敗時 罐頭笑聲", a: "自帶BGM", b: "" },
+            { r: "第二輪 (4/8)", q: "永遠關不住的門\n vs \n卡住的半開玻璃窗", a: "", b: "" },
+            { r: "第二輪 (5/8)", q: "課堂簡報是圖片檔+配色超難看\n vs \n沒課本+課後不給你簡報檔", a: "", b: "" },
+            { r: "第二輪 (6/8)", q: "上課滿滿pua的環境工程 \n vs \n當掉一半學生的流體力學", a: "", b: "" },
+            { r: "第二輪 (7/8)", q: "坐超臭同學旁邊 \n vs \n教授每堂一定抽問", a: "", b: "" },
+            { r: "第二輪 (8/8)", q: "只有43度冰水的飲水機 \n vs \n冷氣壞掉的教室上三小時課", a: "", b: "" },
+            { r: "最終結算", q: "究極怪咖王？！", a: "", b: "" } // Index 18
+        ];
 
         // 核心邏輯：計算誰選了最多「少數派」
-        window.calculateWinner = async () => {
+        async function getWinner(untilStep) {
             const snapshot = await get(ref(db, 'votes'));
-            const allVotes = snapshot.val(); // 格式： { 題號: { 名字: {choice: 'A'} } }
+            if (!snapshot.exists()) return "無數據";
+            const allVotes = snapshot.val();
             let userMinorityCount = {};
 
-            for (let qIdx in allVotes) {
-                let votes = allVotes[qIdx];
+            for (let i = 1; i <= untilStep; i++) {
+                if (!allVotes[i]) continue;
+                let votes = allVotes[i];
                 let countA = 0, countB = 0;
                 for (let name in votes) {
                     if (votes[name].choice === 'A') countA++; else countB++;
                 }
 
                 let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
-                
                 if (minorityChoice) {
                     for (let name in votes) {
                         if (votes[name].choice === minorityChoice) {
@@ -81,14 +106,62 @@
                     }
                 }
             }
-
-            // 找出最大值
+            if (Object.keys(userMinorityCount).length === 0) return "大家都很正常";
             let winner = Object.keys(userMinorityCount).reduce((a, b) => userMinorityCount[a] > userMinorityCount[b] ? a : b);
-            document.getElementById('result-display').innerHTML = `
-                <h1 class="winner-anim">邊緣之神：${winner}</h1>
-                <p>共選了 ${userMinorityCount[winner]} 次少數選項！</p>
-            `;
+            return `${winner} (選了 ${userMinorityCount[winner]} 次少數選項)`;
+        }
+
+        // 當按下「統計怪咖」按鈕時觸發
+        window.triggerWinner = async () => {
+            const winnerBox = document.getElementById('winner-box');
+            const winnerName = document.getElementById('winner-name');
+            winnerBox.style.display = "block";
+            winnerName.innerText = "計算中...";
+            
+            let result = "";
+            if (step === 9) result = await getWinner(8);
+            if (step === 18) result = await getWinner(17);
+            
+            winnerName.innerText = result;
         };
+
+        window.nextStep = () => { 
+            if (step < questions.length - 1) {
+                step++;
+                set(ref(db, 'gameState/currentStep'), step);
+            }
+        };
+        
+        window.prevStep = () => { 
+            if (step > 0) {
+                step--;
+                set(ref(db, 'gameState/currentStep'), step);
+            }
+        };
+
+        onValue(ref(db, 'gameState/currentStep'), (snap) => {
+            step = snap.val() || 0;
+            const q = questions[step];
+            
+            document.getElementById('current-round').innerText = q.r;
+            document.getElementById('current-q').innerText = q.q;
+            document.getElementById('options-hint').innerText = q.a ? `${q.a}  ${q.b}`   : "";
+            
+            const nextBtn = document.getElementById('next-btn');
+            const calcBtn = document.getElementById('calc-btn');
+            const winnerBox = document.getElementById('winner-box');
+
+            // 進入統計題 (9 或 18) 時
+            if (step === 9 || step === 18) {
+                winnerBox.style.display = "none"; // 先隱藏結果，等按按鈕
+                calcBtn.style.display = "inline-block"; // 顯示統計按鈕
+                nextBtn.innerText = (step === 9) ? "進入第二輪 ➡️" : "遊戲結束";
+            } else {
+                winnerBox.style.display = "none";
+                calcBtn.style.display = "none";
+                nextBtn.innerText = (step === 0) ? "正式開始遊戲 ▶️" : "下一題 ➡️";
+            }
+        });
     </script>
 </body>
 </html>
