@@ -1,5 +1,26 @@
 <!DOCTYPE html>
 <html>
+  <div id="game-container">
+    <h2 id="round-title">載入中...</h2>
+    <p id="question-text">請等待主持人開始遊戲</p>
+
+    <div id="user-info-section">
+        <div id="input-group">
+            <input type="text" id="username" placeholder="請輸入你的名字">
+            <button id="join-btn" onclick="confirmJoin()" style="background-color: #28a745; margin-top: 10px;">確認報名</button>
+            <p id="hint-text" style="font-size: 0.8rem; color: #eee; margin-top: 5px;">點擊按鈕鎖定名稱</p>
+        </div>
+        <h2 id="welcome-msg" style="display: none; color: #00805c;"></h2>
+    </div>
+
+    <div id="button-area" style="display:none;">
+        <button onclick="vote('A')" id="btnA">選項 A</button>
+        <button onclick="vote('B')" id="btnB">選項 B</button>
+    </div>
+
+    <p id="status-msg"></p>
+</div>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +28,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <h2 id="round-title">載入中...</h2>
-        <p id="question-text">請等待主持人開始遊戲</p>
-        <div id="input-area">
-            <input type="text" id="username" placeholder="輸入你的名字">
-        </div>
+</div>
         <div id="button-area" style="display:none;">
             <button onclick="vote('A')" id="btnA">選項 A</button>
             <button onclick="vote('B')" id="btnB">選項 B</button>
@@ -33,13 +49,15 @@
               storageBucket: "bse-weirdoking.firebasestorage.app",
               messagingSenderId: "154551508057",
               appId: "1:154551508057:web:47b1be7e7d76743788a548",
-              measurementId: "G-WL3E8V5H94"
+              measurementId: "G-WL3E8V5H94",
+              databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let currentStep = 0;
         const questions = [
+            { r: "遊戲準備中", q: " ", a: "等待開始", b: "等待開始" },
             // 第一輪
             { r: "第一輪", q: "吃不吃香菜？", a: "吃", b: "不吃" },
             { r: "第一輪", q: "滷肉飯拌不拌？", a: "拌", b: "不拌" },
@@ -60,28 +78,111 @@
            { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" }
         ];
 
+        // --- 新增：確認報名函式 ---
+        window.confirmJoin = function() {
+            const nameInput = document.getElementById('username');
+            const name = nameInput.value.trim();
+    
+            if (!name) return alert("請輸入名字再報名喔！");
+
+            // 隱藏輸入區，顯示歡迎詞
+            document.getElementById('input-group').style.display = "none";
+            const welcomeMsg = document.getElementById('welcome-msg');
+            welcomeMsg.innerText = ` ${name}`;
+            welcomeMsg.style.display = "block";
+            
+    
+            // 在狀態文字提示玩家
+            document.getElementById('status-msg').innerText = "報名成功！等待遊戲開始...";
+        };
+        
         // 監聽主持人控制的題目進度
+        // 在監聽 currentStep 的地方 (onValue 內)
         onValue(ref(db, 'gameState/currentStep'), (snapshot) => {
-            currentStep = snapshot.val() || 0;
-            const q = questions[currentStep];
-            document.getElementById('round-title').innerText = q.r + " Q" + (currentStep + 1);
-            document.getElementById('question-text').innerText = q.q;
-            document.getElementById('btnA').innerText = q.a;
-            document.getElementById('btnB').innerText = q.b;
-            document.getElementById('button-area').style.display = "block";
-            document.getElementById('status-msg').innerText = "";
+            try {
+                const stepValue = snapshot.val();
+                currentStep = (stepValue !== null) ? stepValue : 0;
+        
+                console.log("收到新題號：", currentStep); // 除錯用
+
+                // 檢查 questions 是否存在該題目
+                if (!questions[currentStep]) {
+                    console.error("找不到題目資訊！題號：", currentStep);
+                    return;
+                }
+        
+                const q = questions[currentStep];
+        
+                // 更新文字
+                const roundTitle = document.getElementById('round-title');
+                const questionText = document.getElementById('question-text');
+                const btnA = document.getElementById('btnA');
+                const btnB = document.getElementById('btnB');
+                const buttonArea = document.getElementById('button-area');
+                const inputGroup = document.getElementById('input-group');
+                const welcomeMsg = document.getElementById('welcome-msg');
+                const statusMsg = document.getElementById('status-msg');
+        
+                if (roundTitle) roundTitle.innerText = q.r;
+                if (questionText) questionText.innerText = q.q;
+        
+                const isAlreadyJoined = welcomeMsg && welcomeMsg.style.display === "block";
+        
+                if (currentStep === 0) {
+                    // --- 報名階段 ---
+                    if (buttonArea) buttonArea.style.display = "none";
+                    if (isAlreadyJoined) {
+                        if (inputGroup) inputGroup.style.display = "none";
+                        if (statusMsg) statusMsg.innerText = "報名成功！等待開始...";
+                    } else {
+                        if (inputGroup) inputGroup.style.display = "block";
+                        if (statusMsg) statusMsg.innerText = " ";
+                    }
+                } else {
+                    // --- 正式比賽階段 ---
+                    console.log("進入比賽階段，顯示按鈕");
+                    if (inputGroup) inputGroup.style.display = "none";
+                    if (buttonArea) buttonArea.style.display = "block"; // 這一行是關鍵！
+        
+                    if (btnA) {
+                        btnA.innerText = q.a;
+                        btnA.classList.remove('selected');
+                    }
+                    if (btnB) {
+                        btnB.innerText = q.b;
+                        btnB.classList.remove('selected');
+                    }
+                    if (statusMsg) statusMsg.innerText = "請選擇答案！";
+                }
+            } catch (error) {
+                console.error("監聽器執行錯誤：", error);
+            }
         });
 
+        // 修改 vote 函式
         window.vote = function(choice) {
-            const name = document.getElementById('username').value;
+            const nameInput = document.getElementById('username');
+            const name = nameInput.value.trim();
+    
             if (!name) return alert("請先輸入名字！");
-            
-            // 儲存投票結果：votes/第幾題/使用者/選擇
-            update(ref(db, `votes/${currentStep}/${name}`), {
-                choice: choice
-            });
-            document.getElementById('status-msg').innerText = "投票成功，等待下一題！";
-        };
+
+            // 進入第一題後，按下按鈕才鎖定名字
+            if (nameInput.style.display !== "none") {
+                document.getElementById('input-group').style.display = "none";
+                const welcomeMsg = document.getElementById('welcome-msg');
+                welcomeMsg.innerText = `Hi ! ${name}`;
+                welcomeMsg.style.display = "block";
+            }
+
+    // 傳送資料
+    update(ref(db, `votes/${currentStep}/${name}`), { choice: choice });
+    
+    // 變色回饋
+    document.getElementById('btnA').classList.remove('selected');
+    document.getElementById('btnB').classList.remove('selected');
+    const selectedBtn = choice === 'A' ? document.getElementById('btnA') : document.getElementById('btnB');
+    selectedBtn.classList.add('selected');
+};
     </script>
 </body>
 </html>

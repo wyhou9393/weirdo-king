@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html>
+  <div id="host-control-panel">
+    <h1 id="step-display">等待玩家加入...</h1>
+    <button onclick="nextStep()" id="start-btn" style="background: #28a745; font-size: 2rem;">開始第一題</button>
+    <button onclick="prevStep()">回上一題</button>
+</div>
 <head>
     <meta charset="UTF-8">
     <title>晚會大冒險 - 主持人</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <h1>控制台</h1>
     <h2 id="current-q">當前題目</h2>
@@ -27,7 +33,8 @@
               storageBucket: "bse-weirdoking.firebasestorage.app",
               messagingSenderId: "154551508057",
               appId: "1:154551508057:web:47b1be7e7d76743788a548",
-              measurementId: "G-WL3E8V5H94"
+              measurementId: "G-WL3E8V5H94",
+              databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
             
          };
         const app = initializeApp(firebaseConfig);
@@ -40,8 +47,17 @@
 
         onValue(ref(db, 'gameState/currentStep'), (snap) => {
             step = snap.val() || 0;
-            document.getElementById('current-q').innerText = "目前在第 " + (step + 1) + " 題";
-        });
+           const display = document.getElementById('step-display');
+           const btn = document.getElementById('start-btn');
+    
+           if (step === 0) {
+               display.innerText = "現在是：報名階段";
+               btn.innerText = "正式開始遊戲 ▶️";
+           } else {
+               display.innerText = "目前在第 " + step + " 題";
+               btn.innerText = "下一題 ➡️";
+           }
+       });
 
         // 核心邏輯：計算誰選了最多「少數派」
         window.calculateWinner = async () => {

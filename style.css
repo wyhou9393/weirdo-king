@@ -1,8 +1,39 @@
 body { font-family: sans-serif; text-align: center; background: #d7c79f; padding: 20px; }
+
+#join-btn {
+    background: linear-gradient(135deg, #28a745 0%, #00805cff 100%);
+    width: 60%; /* 報名按鈕不用太大 */
+    padding: 12px;
+    font-size: 1rem;
+}
+
 button { 
     padding: 15px 30px; margin: 10px; font-size: 1.2rem; border-radius: 10px; 
-    border: none; background: #007bff; color: white; cursor: pointer; 
+    border: none; background: #0c3b6e; color: white; cursor: pointer; 
 }
+
+button.selected {
+    background-color: #6c757d !important;
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
 input { padding: 10px; font-size: 1rem; margin-bottom: 20px; border-radius: 5px; }
 .winner-anim { font-size: 3rem; color: #e67e22; animation: bounce 1s infinite; }
 @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+#welcome-msg {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    border-radius: 50px; /* 膠囊形狀 */
+    font-size: 1.2rem;
+    margin: 10px 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: fadeIn 0.5s ease-in;
+    
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
