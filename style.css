@@ -1,0 +1,8 @@
+body { font-family: sans-serif; text-align: center; background: #d7c79f; padding: 20px; }
+button { 
+    padding: 15px 30px; margin: 10px; font-size: 1.2rem; border-radius: 10px; 
+    border: none; background: #007bff; color: white; cursor: pointer; 
+}
+input { padding: 10px; font-size: 1rem; margin-bottom: 20px; border-radius: 5px; }
+.winner-anim { font-size: 3rem; color: #e67e22; animation: bounce 1s infinite; }
+@keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }

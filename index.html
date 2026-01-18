@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>晚會大冒險 - 玩家</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <h2 id="round-title">載入中...</h2>
+        <p id="question-text">請等待主持人開始遊戲</p>
+        <div id="input-area">
+            <input type="text" id="username" placeholder="輸入你的名字">
+        </div>
+        <div id="button-area" style="display:none;">
+            <button onclick="vote('A')" id="btnA">選項 A</button>
+            <button onclick="vote('B')" id="btnB">選項 B</button>
+        </div>
+        <p id="status-msg"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { 
+          // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+            
+              apiKey: "AIzaSyB9utfozRJXaMj07hOCMrEKB_s1wKVfbFw",
+              authDomain: "bse-weirdoking.firebaseapp.com",
+              projectId: "bse-weirdoking",
+              storageBucket: "bse-weirdoking.firebasestorage.app",
+              messagingSenderId: "154551508057",
+              appId: "1:154551508057:web:47b1be7e7d76743788a548",
+              measurementId: "G-WL3E8V5H94"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentStep = 0;
+        const questions = [
+            // 第一輪
+            { r: "第一輪", q: "吃不吃香菜？", a: "吃", b: "不吃" },
+            { r: "第一輪", q: "滷肉飯拌不拌？", a: "拌", b: "不拌" },
+            { r: "第一輪", q: "咖哩拌不拌？", a: "拌", b: "不拌" },
+            { r: "第一輪", q: "火鍋芋頭加不加？", a: "加", b: "不加" },
+            { r: "第一輪", q: "全糖手搖喝不喝？", a: "喝", b: "不喝" },
+            { r: "第一輪", q: "奶茶種類？", a: "奶精奶茶", b: "鮮奶茶" },
+            { r: "第一輪", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
+            { r: "第一輪", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
+            // 第二輪
+            { r: "第二輪", q: "哪種生活更慘？", a: "安靜處必放大屁", b: "一輩子拿基本工資" },
+            { r: "第二輪", q: "外型與氣味？", a: "超帥但極臭", b: "醜但自帶香味" },
+            { r: "第二輪", q: "人生背景音？", a: "尷尬時有悲情鋼琴", b: "失敗時有罐頭笑聲" },
+            { r: "第二輪", q: "房間缺陷？", a: "門關不起來", b: "窗戶卡住半開" },
+            { r: "第二輪", q: "簡報酷刑？", a: "圖片檔且配色難看", b: "不給課後檔案" },
+            { r: "第二輪", q: "魔鬼課程？", a: "PUA環境工程", b: "當掉一半的流體力學" },
+            { r: "第二輪", q: "上課地獄？", a: "坐超臭同學旁邊", b: "教授每堂必抽問" },
+           { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" }
+        ];
+
+        // 監聽主持人控制的題目進度
+        onValue(ref(db, 'gameState/currentStep'), (snapshot) => {
+            currentStep = snapshot.val() || 0;
+            const q = questions[currentStep];
+            document.getElementById('round-title').innerText = q.r + " Q" + (currentStep + 1);
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('btnA').innerText = q.a;
+            document.getElementById('btnB').innerText = q.b;
+            document.getElementById('button-area').style.display = "block";
+            document.getElementById('status-msg').innerText = "";
+        });
+
+        window.vote = function(choice) {
+            const name = document.getElementById('username').value;
+            if (!name) return alert("請先輸入名字！");
+            
+            // 儲存投票結果：votes/第幾題/使用者/選擇
+            update(ref(db, `votes/${currentStep}/${name}`), {
+                choice: choice
+            });
+            document.getElementById('status-msg').innerText = "投票成功，等待下一題！";
+        };
+    </script>
+</body>
+</html>
