@@ -1,7 +1,7 @@
 body { font-family: sans-serif; text-align: center; background: #d7c79f; padding: 20px; }
 
 #join-btn {
-    background: linear-gradient(135deg, #28a745 0%, #00805cff 100%);
+    background-color: #c72d2d;
     width: 60%; /* 報名按鈕不用太大 */
     padding: 12px;
     font-size: 1rem;
@@ -17,6 +17,20 @@ button.selected {
     transform: scale(0.95);
     opacity: 0.8;
 }
+
+/* 選項 A：預設是藍色，你可以改為任何顏色 */
+#btnA {
+    background-color: #0c3b6e; /* 這裡改顏色 */
+    color: white;             /* 文字顏色 */
+}
+
+/* 選項 B：預設是紅色 */
+#btnB {
+    background-color: #0c3b6e; /* 這裡改顏色 */
+    color: white;
+}
+
+
 
 input { padding: 10px; font-size: 1rem; margin-bottom: 20px; border-radius: 5px; }
 .winner-anim { font-size: 3rem; color: #e67e22; animation: bounce 1s infinite; }
