@@ -1,26 +1,5 @@
 <!DOCTYPE html>
 <html>
-  <div id="game-container">
-    <h2 id="round-title">載入中...</h2>
-    <p id="question-text">請等待主持人開始遊戲</p>
-
-    <div id="user-info-section">
-        <div id="input-group">
-            <input type="text" id="username" placeholder="請輸入你的名字">
-            <button id="join-btn" onclick="confirmJoin()" style="background-color: #c72d2d; margin-top: 10px;">確認報名</button>
-            <p id="hint-text" style="font-size: 0.8rem; color: #eee; margin-top: 5px;">點擊按鈕鎖定名稱</p>
-        </div>
-        <h2 id="welcome-msg" style="display: none; color: #00805c;"></h2>
-    </div>
-
-    <div id="button-area" style="display:none;">
-        <button onclick="vote('A')" id="btnA">選項 A</button>
-        <button onclick="vote('B')" id="btnB">選項 B</button>
-    </div>
-
-    <p id="status-msg"></p>
-</div>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,29 +7,40 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-</div>
+    <div id="game-container">
+        <h2 id="round-title">載入中...</h2>
+        <p id="question-text">請等待主持人開始遊戲</p>
+
+        <div id="user-info-section">
+            <div id="input-group">
+                <input type="text" id="username" placeholder="請輸入你的名字">
+                <button id="join-btn" onclick="confirmJoin()">確認報名</button>
+                <p id="hint-text" style="font-size: 0.8rem; color: #eee; margin-top: 5px;">點擊按鈕鎖定名稱</p>
+            </div>
+            <h2 id="welcome-msg" style="display: none;"></h2>
+        </div>
+
         <div id="button-area" style="display:none;">
             <button onclick="vote('A')" id="btnA">選項 A</button>
             <button onclick="vote('B')" id="btnB">選項 B</button>
         </div>
+
         <p id="status-msg"></p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { 
-          // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-            
-              apiKey: "AIzaSyB9utfozRJXaMj07hOCMrEKB_s1wKVfbFw",
-              authDomain: "bse-weirdoking.firebaseapp.com",
-              projectId: "bse-weirdoking",
-              storageBucket: "bse-weirdoking.firebasestorage.app",
-              messagingSenderId: "154551508057",
-              appId: "1:154551508057:web:47b1be7e7d76743788a548",
-              measurementId: "G-WL3E8V5H94",
-              databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyB9utfozRJXaMj07hOCMrEKB_s1wKVfbFw",
+            authDomain: "bse-weirdoking.firebaseapp.com",
+            projectId: "bse-weirdoking",
+            storageBucket: "bse-weirdoking.firebasestorage.app",
+            messagingSenderId: "154551508057",
+            appId: "1:154551508057:web:47b1be7e7d76743788a548",
+            measurementId: "G-WL3E8V5H94",
+            databaseURL: "https://bse-weirdoking-default-rtdb.firebaseio.com"
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -58,7 +48,6 @@
         let currentStep = 0;
         const questions = [
             { r: "遊戲準備中", q: " ", a: "等待開始", b: "等待開始" },
-            // 第一輪
             { r: "第一輪", q: "吃不吃香菜？", a: "吃", b: "不吃" },
             { r: "第一輪", q: "滷肉飯拌不拌？", a: "拌", b: "不拌" },
             { r: "第一輪", q: "咖哩拌不拌？", a: "拌", b: "不拌" },
@@ -67,7 +56,6 @@
             { r: "第一輪", q: "奶茶種類？", a: "奶精奶茶", b: "鮮奶茶" },
             { r: "第一輪", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
             { r: "第一輪", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
-            // 第二輪
             { r: "第二輪", q: "哪種生活更慘？", a: "安靜處必放大屁", b: "一輩子拿基本工資" },
             { r: "第二輪", q: "外型與氣味？", a: "超帥但極臭", b: "醜但自帶香味" },
             { r: "第二輪", q: "人生背景音？", a: "尷尬時有悲情鋼琴", b: "失敗時有罐頭笑聲" },
@@ -75,114 +63,59 @@
             { r: "第二輪", q: "簡報酷刑？", a: "圖片檔且配色難看", b: "不給課後檔案" },
             { r: "第二輪", q: "魔鬼課程？", a: "PUA環境工程", b: "當掉一半的流體力學" },
             { r: "第二輪", q: "上課地獄？", a: "坐超臭同學旁邊", b: "教授每堂必抽問" },
-           { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" }
+            { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" }
         ];
 
-        // --- 新增：確認報名函式 ---
         window.confirmJoin = function() {
-            const nameInput = document.getElementById('username');
-            const name = nameInput.value.trim();
-    
+            const name = document.getElementById('username').value.trim();
             if (!name) return alert("請輸入名字再報名喔！");
 
-            // 隱藏輸入區，顯示歡迎詞
             document.getElementById('input-group').style.display = "none";
             const welcomeMsg = document.getElementById('welcome-msg');
-            welcomeMsg.innerText = ` ${name}`;
+            welcomeMsg.innerText = `${name}`;
             welcomeMsg.style.display = "block";
-            
-    
-            // 在狀態文字提示玩家
             document.getElementById('status-msg').innerText = "報名成功！等待遊戲開始...";
         };
         
-        // 監聽主持人控制的題目進度
-        // 在監聽 currentStep 的地方 (onValue 內)
         onValue(ref(db, 'gameState/currentStep'), (snapshot) => {
             try {
                 const stepValue = snapshot.val();
                 currentStep = (stepValue !== null) ? stepValue : 0;
-        
-                console.log("收到新題號：", currentStep); // 除錯用
-
-                // 檢查 questions 是否存在該題目
-                if (!questions[currentStep]) {
-                    console.error("找不到題目資訊！題號：", currentStep);
-                    return;
-                }
-        
                 const q = questions[currentStep];
+
+                document.getElementById('round-title').innerText = q.r;
+                document.getElementById('question-text').innerText = q.q;
         
-                // 更新文字
-                const roundTitle = document.getElementById('round-title');
-                const questionText = document.getElementById('question-text');
-                const btnA = document.getElementById('btnA');
-                const btnB = document.getElementById('btnB');
-                const buttonArea = document.getElementById('button-area');
-                const inputGroup = document.getElementById('input-group');
-                const welcomeMsg = document.getElementById('welcome-msg');
-                const statusMsg = document.getElementById('status-msg');
-        
-                if (roundTitle) roundTitle.innerText = q.r;
-                if (questionText) questionText.innerText = q.q;
-        
-                const isAlreadyJoined = welcomeMsg && welcomeMsg.style.display === "block";
+                const isAlreadyJoined = document.getElementById('welcome-msg').style.display === "block";
         
                 if (currentStep === 0) {
-                    // --- 報名階段 ---
-                    if (buttonArea) buttonArea.style.display = "none";
-                    if (isAlreadyJoined) {
-                        if (inputGroup) inputGroup.style.display = "none";
-                        if (statusMsg) statusMsg.innerText = "報名成功！等待開始...";
-                    } else {
-                        if (inputGroup) inputGroup.style.display = "block";
-                        if (statusMsg) statusMsg.innerText = " ";
-                    }
+                    document.getElementById('button-area').style.display = "none";
+                    if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
                 } else {
-                    // --- 正式比賽階段 ---
-                    console.log("進入比賽階段，顯示按鈕");
-                    if (inputGroup) inputGroup.style.display = "none";
-                    if (buttonArea) buttonArea.style.display = "block"; // 這一行是關鍵！
-        
-                    if (btnA) {
-                        btnA.innerText = q.a;
-                        btnA.classList.remove('selected');
-                    }
-                    if (btnB) {
-                        btnB.innerText = q.b;
-                        btnB.classList.remove('selected');
-                    }
-                    if (statusMsg) statusMsg.innerText = "請選擇答案！";
+                    document.getElementById('input-group').style.display = "none";
+                    document.getElementById('button-area').style.display = "block";
+                    document.getElementById('btnA').innerText = q.a;
+                    document.getElementById('btnB').innerText = q.b;
+                    document.getElementById('btnA').classList.remove('selected');
+                    document.getElementById('btnB').classList.remove('selected');
+                    document.getElementById('status-msg').innerText = "請選擇答案！";
                 }
             } catch (error) {
-                console.error("監聽器執行錯誤：", error);
+                console.error("更新錯誤：", error);
             }
         });
 
-        // 修改 vote 函式
         window.vote = function(choice) {
-            const nameInput = document.getElementById('username');
-            const name = nameInput.value.trim();
-    
+            const name = document.getElementById('username').value.trim();
             if (!name) return alert("請先輸入名字！");
 
-            // 進入第一題後，按下按鈕才鎖定名字
-            if (nameInput.style.display !== "none") {
-                document.getElementById('input-group').style.display = "none";
-                const welcomeMsg = document.getElementById('welcome-msg');
-                welcomeMsg.innerText = `Hi ! ${name}`;
-                welcomeMsg.style.display = "block";
-            }
-
-    // 傳送資料
-    update(ref(db, `votes/${currentStep}/${name}`), { choice: choice });
-    
-    // 變色回饋
-    document.getElementById('btnA').classList.remove('selected');
-    document.getElementById('btnB').classList.remove('selected');
-    const selectedBtn = choice === 'A' ? document.getElementById('btnA') : document.getElementById('btnB');
-    selectedBtn.classList.add('selected');
-};
+            update(ref(db, `votes/${currentStep}/${name}`), { choice: choice });
+            
+            document.getElementById('btnA').classList.remove('selected');
+            document.getElementById('btnB').classList.remove('selected');
+            document.getElementById(choice === 'A' ? 'btnA' : 'btnB').classList.add('selected');
+            document.getElementById('status-msg').innerText = "已投票！";
+        };
     </script>
 </body>
 </html>
