@@ -39,6 +39,12 @@
         <button onclick="nextStep()" id="next-btn" class="btn-main">開始遊戲 ▶️</button>
         <br>
         <button onclick="prevStep()" class="btn-sub">⬅️ 回上一題</button>
+
+        <br><br>
+        <button onclick="resetGame()" style="background: #444; color: #888; border: none; padding: 5px 10px; font-size: 0.7rem; cursor: pointer; border-radius: 5px;">
+            危險區域：重置整個遊戲數據
+        </button>
+
     </div>
 
     <script type="module">
@@ -57,6 +63,24 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+
+        // 重置遊戲函式
+        window.resetGame = async () => {
+            if (confirm("⚠️ 確定要刪除所有投票紀錄並回到報名階段嗎？此動作無法復原！")) {
+                try {
+                    // 1. 回到第 0 題
+                    await set(ref(db, 'gameState/currentStep'), 0);
+                    // 2. 刪除所有投票紀錄
+                    await set(ref(db, 'votes'), null); 
+                    
+                    alert("遊戲已重置！現在可以重新開始了。");
+                    location.reload(); // 重新整理頁面確保變數乾淨
+                } catch (error) {
+                    console.error("重置失敗：", error);
+                    alert("重置失敗，請檢查網路連線。");
+                }
+            }
+        };
 
         let step = 0;
 
