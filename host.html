@@ -8,12 +8,13 @@
     <style>
         body { background: #171615; color: #fff; text-align: center; font-family: sans-serif; }
         .control-panel { background: #28276d; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 600px; }
-        .q-display { background: #ebcf9f; padding: 15px; border-radius: 10px; margin: 20px 0; min-height: 100px; color: #333; }
+        .q-display { background: #ebcf9f; padding: 15px; border-radius: 10px; margin: 20px 0; min-height: 100px; color: #333; position: relative; }
         .btn-main { background: #2da551; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; }
         .btn-sub { background: #6d7175; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; }
-        /* 統計按鈕樣式 */
         .btn-calc { background: #ffc107; color: black; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 10px; cursor: pointer; margin: 10px; font-weight: bold; display: none; }
-        #winner-box { background: #df2b2b; color: #f6e6c9; padding: 20px; border-radius: 15px; display: none; margin-top: 20px; animation: pulse 2s infinite; }
+        #winner-box { background: #df2b2b; color: #f7efe1; padding: 20px; border-radius: 15px; display: none; margin-top: 20px; animation: pulse 2s infinite; }
+        /* 人數統計浮動標籤 */
+        #live-counter { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-bottom: 10px; display: inline-block; color: #00ffcc; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
@@ -21,20 +22,25 @@
     <h1>生工大劇場 - 誰是怪咖王</h1>
 
     <div class="control-panel">
+        <div id="live-counter">載入中...</div>
+
         <div class="q-display">
             <h3 id="current-round" style="color: #4a4b94;"></h3>
             <h1 id="current-q"></h1>
-            <p id="options-hint" style="color: #423d3d;"></p>
+            <p id="options-hint" style="color: #423d3d; font-weight: bold; font-size: 1.2rem;"></p>
         </div>
 
         <div id="winner-box">
-            <h2 id="result-title"> 唯一且獨特的這群朋友們 </h2>
-            <h1 id="winner-name">---</h1>
+            <h2 id="result-title"> 揭曉結果 </h2>
+            <div id="winner-name" style="font-size: 1.5rem;">---</div>
         </div>
 
         <hr style="border: 0.5px solid #444; margin: 20px 0;">
         
-        <button onclick="triggerWinner()" id="calc-btn" class="btn-calc">📊 統計誰是怪咖</button>
+        <button onclick="showMinority()" id="minority-btn" class="btn-calc" style="display:none; background: #007bff; color: white;">📊 揭曉本題少數派</button>
+        
+        <button onclick="triggerWinner()" id="calc-btn" class="btn-calc">🏆 統計誰是怪咖王</button>
+        
         <br>
         <button onclick="nextStep()" id="next-btn" class="btn-main">開始遊戲 ▶️</button>
         <br>
@@ -44,7 +50,6 @@
         <button onclick="resetGame()" style="background: #444; color: #888; border: none; padding: 5px 10px; font-size: 0.7rem; cursor: pointer; border-radius: 5px;">
             危險區域：重置整個遊戲數據
         </button>
-
     </div>
 
     <script type="module">
@@ -64,26 +69,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 重置遊戲函式
-        window.resetGame = async () => {
-            if (confirm("⚠️ 確定要刪除所有投票紀錄並回到報名階段嗎？此動作無法復原！")) {
-                try {
-                    // 1. 回到第 0 題
-                    await set(ref(db, 'gameState/currentStep'), 0);
-                    // 2. 刪除所有投票紀錄
-                    await set(ref(db, 'votes'), null); 
-                    
-                    alert("遊戲已重置！現在可以重新開始了。");
-                    location.reload(); // 重新整理頁面確保變數乾淨
-                } catch (error) {
-                    console.error("重置失敗：", error);
-                    alert("重置失敗，請檢查網路連線。");
-                }
-            }
-        };
-
         let step = 0;
-
         const questions = [
             { r: "準備中...", q: "請輸入名字", a: "", b: "" },
             { r: "第一輪 (1/8)", q: "吃不吃香菜？", a: "吃", b: "不吃" },
@@ -94,7 +80,7 @@
             { r: "第一輪 (6/8)", q: "奶茶種類？", a: "奶精奶茶", b: "鮮奶茶" },
             { r: "第一輪 (7/8)", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
             { r: "第一輪 (8/8)", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
-            { r: "休息一下沒有進廣告", q: "誰是目前的怪咖？", a: "", b: "" }, // Index 9
+            { r: "休息一下沒有進廣告", q: "誰是目前的怪咖？", a: "", b: "" }, // 9
             { r: "第二輪", q: "哪種比較好呢？", a: "安靜處必放大屁", b: "一輩子拿基本工資" },
             { r: "第二輪", q: "外型與氣味？", a: "超好看但極臭", b: "醜但自帶香味" },
             { r: "第二輪", q: "人生背景音？", a: "尷尬時有悲情鋼琴", b: "失敗時有罐頭笑聲" },
@@ -103,118 +89,121 @@
             { r: "第二輪", q: "魔鬼課程？", a: "PUA環境工程", b: "當掉一半的流體力學" },
             { r: "第二輪", q: "上課地獄？", a: "坐超臭同學旁邊", b: "教授每堂必抽問" },
             { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" },
-            { r: "最終結算", q: "究極怪咖王？！", a: "", b: "" } // Index 18
+            { r: "最終結算", q: "究極怪咖王？！", a: "", b: "" } // 18
         ];
 
-        /* 核心邏輯：計算誰選了最多「少數派」
-        async function getWinner(untilStep) {
-            const snapshot = await get(ref(db, 'votes'));
-            if (!snapshot.exists()) return "無數據";
-            const allVotes = snapshot.val();
-            let userMinorityCount = {};
+        onValue(ref(db, 'gameState/currentStep'), (snap) => {
+            step = snap.val() || 0;
+            const q = questions[step];
+            document.getElementById('current-round').innerText = q.r;
+            document.getElementById('current-q').innerText = q.q;
+            document.getElementById('options-hint').innerText = q.a ? `A: ${q.a}  vs  B: ${q.b}` : "";
+            
+            const nextBtn = document.getElementById('next-btn');
+            const minorityBtn = document.getElementById('minority-btn');
+            const calcBtn = document.getElementById('calc-btn');
+            const winnerBox = document.getElementById('winner-box');
 
-            for (let i = 1; i <= untilStep; i++) {
-                if (!allVotes[i]) continue;
-                let votes = allVotes[i];
+            winnerBox.style.display = "none";
+
+            // 判斷按鈕顯示邏輯
+            if (step === 0) {
+                // 報名階段
+                nextBtn.style.display = "inline-block";
+                nextBtn.innerText = "正式開始遊戲 ▶️";
+                minorityBtn.style.display = "none";
+                calcBtn.style.display = "none";
+            } 
+            else if (step === 9 || step === 18) {
+                // 中場統計或最後結算
+                nextBtn.style.display = "inline-block";
+                nextBtn.innerText = (step === 9) ? "進入第二輪 ➡️" : "遊戲結束";
+                minorityBtn.style.display = "none";
+                calcBtn.style.display = "inline-block";
+            } 
+            else {
+                // 一般題目頁面：隱藏「下一題」，先顯示「揭曉少數派」
+                nextBtn.style.display = "none"; 
+                nextBtn.innerText = "下一題 ➡️"; // 預設好文字，等揭曉完顯示
+                minorityBtn.style.display = "inline-block";
+                calcBtn.style.display = "none";
+            }
+        });
+
+        // 修改揭曉函式，確保揭曉後按鈕文字正確
+        window.showMinority = async () => {
+            const snap = await get(ref(db, `votes/${step}`));
+            const winnerBox = document.getElementById('winner-box');
+            const winnerName = document.getElementById('winner-name');
+            winnerBox.style.display = "block";
+            
+            if (!snap.exists()) {
+                winnerName.innerText = "目前沒有人投票喔！";
+            } else {
+                const votes = snap.val();
                 let countA = 0, countB = 0;
-                for (let name in votes) {
-                    if (votes[name].choice === 'A') countA++; else countB++;
+                for (let p in votes) {
+                    if (votes[p].choice === 'A') countA++; else countB++;
                 }
 
-                let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
-                if (minorityChoice) {
-                    for (let name in votes) {
-                        if (votes[name].choice === minorityChoice) {
-                            userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
-                        }
-                    }
+                if (countA === countB) {
+                    winnerName.innerHTML = `平手！<br>(A: ${countA} 票 | B: ${countB} 票)`;
+                } else {
+                    const minority = countA < countB ? 'A' : 'B';
+                    const minorityText = minority === 'A' ? questions[step].a : questions[step].b;
+                    winnerName.innerHTML = `<span style="color:#fff">本題少數派是：</span><br>【${minorityText}】<br><small>(A: ${countA} vs B: ${countB})</small>`;
                 }
             }
-            if (Object.keys(userMinorityCount).length === 0) return "大家都很正常";
+            
+            // 揭曉完後，隱揭曉按鈕，顯示「下一題」
+            document.getElementById('minority-btn').style.display = "none";
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.style.display = "inline-block";
+            // 這裡確保文字是下一題，除非是第 8 題要進中場
+            if (step === 8) {
+                nextBtn.innerText = "前往中場結算 ➡️";
+            } else if (step === 17) {
+                nextBtn.innerText = "前往最終結算 ➡️";
+            } else {
+                nextBtn.innerText = "下一題 ➡️";
+            }
+        };
+
+        // 怪咖王大結算邏輯 (維持你之前的優化版)
+        async function getWinner(untilStep) {
+            const snapshot = await get(ref(db, 'votes'));
+            if (!snapshot.exists()) return { name: "無數據", history: "" };
+            const allVotes = snapshot.val();
+            let userMinorityCount = {};
+            for (let i = 1; i <= untilStep; i++) {
+                if (!allVotes[i]) continue;
+                let votes = allVotes[i], cA = 0, cB = 0;
+                for (let n in votes) { if (votes[n].choice === 'A') cA++; else cB++; }
+                let minC = cA < cB ? 'A' : (cB < cA ? 'B' : null);
+                if (minC) {
+                    for (let n in votes) { if (votes[n].choice === minC) userMinorityCount[n] = (userMinorityCount[n] || 0) + 1; }
+                }
+            }
+            if (Object.keys(userMinorityCount).length === 0) return { name: "大家都很一般", history: "" };
             let winner = Object.keys(userMinorityCount).reduce((a, b) => userMinorityCount[a] > userMinorityCount[b] ? a : b);
-            return `${winner} (選了 ${userMinorityCount[winner]} 次少數選項)`;
+            let historyHtml = "<div style='font-size: 0.9rem; text-align: left; margin-top: 10px; border-top: 1px solid #fff; padding-top: 10px;'><b>他的奇葩選擇：</b><br>";
+            for (let i = 1; i <= untilStep; i++) {
+                if (allVotes[i] && allVotes[i][winner]) {
+                    let c = allVotes[i][winner].choice;
+                    historyHtml += `Q${i}: ${c === 'A' ? questions[i].a : questions[i].b}<br>`;
+                }
+            }
+            return { name: `${winner} (${userMinorityCount[winner]}次少數)`, history: historyHtml + "</div>" };
         }
 
-        // 當按下「統計怪咖」按鈕時觸發
         window.triggerWinner = async () => {
             const winnerBox = document.getElementById('winner-box');
             const winnerName = document.getElementById('winner-name');
             winnerBox.style.display = "block";
-            winnerName.innerText = "計算中...";
-            
-            let result = "";
-            if (step === 9) result = await getWinner(8);
-            if (step === 18) result = await getWinner(17);
-            
-            winnerName.innerText = result;
-        };*/
-
-        // 核心邏輯：計算怪咖並抓取其選擇紀錄
-        async function getWinner(untilStep) {
-            const snapshot = await get(ref(db, 'votes'));
-            if (!snapshot.exists()) return { name: "無數據", history: "" };
-    
-            const allVotes = snapshot.val();
-            let userMinorityCount = {};
-        
-            // 1. 先算出誰是怪咖
-            for (let i = 1; i <= untilStep; i++) {
-                if (!allVotes[i]) continue;
-                let votes = allVotes[i];
-                let countA = 0, countB = 0;
-                for (let name in votes) {
-                    if (votes[name].choice === 'A') countA++; else countB++;
-                }
-                let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
-                if (minorityChoice) {
-                    for (let name in votes) {
-                        if (votes[name].choice === minorityChoice) {
-                            userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
-                        }
-                    }
-                }
-            }
-        
-            if (Object.keys(userMinorityCount).length === 0) return { name: "大家都很正常", history: "" };
-        
-            // 找出最高分者
-            let winner = Object.keys(userMinorityCount).reduce((a, b) => userMinorityCount[a] > userMinorityCount[b] ? a : b);
-                
-            // 2. 抓取這位贏家的歷史選擇紀錄
-            let historyHtml = "<div style='font-size: 1rem; text-align: left; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px;'>";
-            historyHtml += "<b>他的奇葩選擇：</b><br>";
-            
-            for (let i = 1; i <= untilStep; i++) {
-                if (allVotes[i] && allVotes[i][winner]) {
-                    let choice = allVotes[i][winner].choice;
-                    // 根據索引找出該題目的選項文字
-                    let choiceText = choice === 'A' ? questions[i].a : questions[i].b;
-                    historyHtml += `第${i}題：${choice} (${choiceText})<br>`;
-                }
-            }
-            historyHtml += "</div>";
-        
-            return { 
-                name: `${winner} (共選了 ${userMinorityCount[winner]} 次少數選項)`, 
-                history: historyHtml 
-            };
-        }
-
-// 修改按鈕觸發函式
-window.triggerWinner = async () => {
-    const winnerBox = document.getElementById('winner-box');
-    const winnerName = document.getElementById('winner-name');
-    winnerBox.style.display = "block";
-    winnerName.innerHTML = "計算中..."; // 改用 innerHTML 因為要塞標籤
-    
-    let resultObj = { name: "", history: "" };
-    if (step === 9) resultObj = await getWinner(8);
-    if (step === 18) resultObj = await getWinner(17);
-    
-    // 顯示名字 + 歷史紀錄
-    winnerName.innerHTML = `<span style="font-size: 1.8rem;">${resultObj.name}</span>${resultObj.history}`;
-};
-
+            winnerName.innerHTML = "計算中...";
+            let res = (step === 9) ? await getWinner(8) : await getWinner(17);
+            winnerName.innerHTML = `<span style="font-size: 1.8rem;">${res.name}</span>${res.history}`;
+        };
 
         window.nextStep = () => { 
             if (step < questions.length - 1) {
@@ -233,26 +222,47 @@ window.triggerWinner = async () => {
         onValue(ref(db, 'gameState/currentStep'), (snap) => {
             step = snap.val() || 0;
             const q = questions[step];
-            
             document.getElementById('current-round').innerText = q.r;
             document.getElementById('current-q').innerText = q.q;
-            document.getElementById('options-hint').innerText = q.a ? `${q.a}  ${q.b}`   : "";
+            document.getElementById('options-hint').innerText = q.a ? `A: ${q.a}  vs  B: ${q.b}` : "";
             
             const nextBtn = document.getElementById('next-btn');
+            const minorityBtn = document.getElementById('minority-btn');
             const calcBtn = document.getElementById('calc-btn');
             const winnerBox = document.getElementById('winner-box');
 
-            // 進入統計題 (9 或 18) 時
-            if (step === 9 || step === 18) {
-                winnerBox.style.display = "none"; // 先隱藏結果，等按按鈕
-                calcBtn.style.display = "inline-block"; // 顯示統計按鈕
-                nextBtn.innerText = (step === 9) ? "進入第二輪 ➡️" : "遊戲結束";
-            } else {
-                winnerBox.style.display = "none";
+            winnerBox.style.display = "none";
+
+            // 邏輯控制：如果是題目頁
+            if (q.a !== "" && step !== 9 && step !== 18) {
+                nextBtn.style.display = "none"; // 隱藏下一步，強迫先看統計
+                minorityBtn.style.display = "inline-block";
                 calcBtn.style.display = "none";
-                nextBtn.innerText = (step === 0) ? "正式開始遊戲 ▶️" : "下一題 ➡️";
+            } 
+            // 如果是統計大關卡 (9, 18)
+            else if (step === 9 || step === 18) {
+                nextBtn.style.display = "inline-block";
+                nextBtn.innerText = (step === 9) ? "開始第二輪 ➡️" : "遊戲結束";
+                minorityBtn.style.display = "none";
+                calcBtn.style.display = "inline-block";
+            } 
+            // 報名頁 (Step 0)
+            else {
+                nextBtn.style.display = "inline-block";
+                nextBtn.innerText = "正式開始遊戲 ▶️";
+                minorityBtn.style.display = "none";
+                calcBtn.style.display = "none";
             }
         });
+
+        window.resetGame = async () => {
+            if (confirm("⚠️ 確定要刪除所有資料（含報名人數）嗎？")) {
+                await set(ref(db, 'gameState/currentStep'), 0);
+                await set(ref(db, 'votes'), null); 
+                await set(ref(db, 'players'), null); 
+                location.reload();
+            }
+        };
     </script>
 </body>
 </html>
