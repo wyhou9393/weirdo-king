@@ -138,31 +138,69 @@
             document.getElementById('next-btn').style.display = "inline-block";
         };
 
-        // 怪咖王大結算邏輯 (維持你之前的優化版)
         async function getWinner(untilStep) {
             const snapshot = await get(ref(db, 'votes'));
             if (!snapshot.exists()) return { name: "無數據", history: "" };
+
             const allVotes = snapshot.val();
             let userMinorityCount = {};
+            let stepResults = {}; // 用來存每一題的少數派選項是什麼
+
+            // 1. 計算每個人選了幾次少數，並記錄每一題的少數派選項
             for (let i = 1; i <= untilStep; i++) {
                 if (!allVotes[i]) continue;
-                let votes = allVotes[i], cA = 0, cB = 0;
-                for (let n in votes) { if (votes[n].choice === 'A') cA++; else cB++; }
-                let minC = cA < cB ? 'A' : (cB < cA ? 'B' : null);
-                if (minC) {
-                    for (let n in votes) { if (votes[n].choice === minC) userMinorityCount[n] = (userMinorityCount[n] || 0) + 1; }
+                let votes = allVotes[i];
+                let countA = 0, countB = 0;
+                for (let name in votes) {
+                    if (votes[name].choice === 'A') countA++; else countB++;
+                }
+                
+                let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
+                stepResults[i] = minorityChoice; // 記錄第 i 題的少數派是 A 還是 B
+        
+                if (minorityChoice) {
+                    for (let name in votes) {
+                        if (votes[name].choice === minorityChoice) {
+                            userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
+                        }
+                    }
                 }
             }
-            if (Object.keys(userMinorityCount).length === 0) return { name: "大家都很一般", history: "" };
-            let winner = Object.keys(userMinorityCount).reduce((a, b) => userMinorityCount[a] > userMinorityCount[b] ? a : b);
-            let historyHtml = "<div style='font-size: 0.9rem; text-align: left; margin-top: 10px; border-top: 1px solid #fff; padding-top: 10px;'><b>他的奇葩選擇：</b><br>";
-            for (let i = 1; i <= untilStep; i++) {
-                if (allVotes[i] && allVotes[i][winner]) {
-                    let c = allVotes[i][winner].choice;
-                    historyHtml += `Q${i}: ${c === 'A' ? questions[i].a : questions[i].b}<br>`;
+        
+            if (Object.keys(userMinorityCount).length === 0) return { name: "大家都很正常", history: "" };
+        
+            // 2. 找出最高次數與獲勝者
+            let maxCount = Math.max(...Object.values(userMinorityCount));
+            let winners = Object.keys(userMinorityCount).filter(name => userMinorityCount[name] === maxCount);
+        
+            // 3. 建立顯示清單 (只列出他們選的「少數選項」)
+            let         historyHtml = "<div style='font-size: 1rem; text-align: left; margin-top: 15px; border-top: 1px dashed #333; padding-top: 10px;'>";
+            historyHtml += `<b>怪咖事蹟紀錄：</b><br>`;
+        
+            winners.forEach(name => {
+                historyHtml += `<p style="margin: 10px 0 5px 0; color: #df2b2b; font-weight: bold;">【${name}】的怪咖時刻：</p>`;
+                let foundAny = false;
+                for (let i = 1; i <= untilStep; i++) {
+                    // 如果這題該玩家選的剛好是該題的少數派
+                    if (allVotes[i] && allVotes[i][name] && allVotes[i][name].choice === stepResults[i]) {
+                        let choiceText = (stepResults[i] === 'A') ? questions[i].a : questions[i].b;
+                        historyHtml += `<span style="font-size: 0.9rem;">📍 第${i}題：${choiceText}</span><br>`;
+                        foundAny = true;
+                    }
                 }
-            }
-            return { name: `${winner} (${userMinorityCount[winner]}次少數)`, history: historyHtml + "</div>" };
+                if (!foundAny) historyHtml += `<span>無 (可能是平手造成)</span><br>`;
+            });
+            historyHtml += "</div>";
+        
+            // 4. 回傳顯示文字
+            let displayName = winners.length > 1 
+                ? `並列怪咖王：<br>${winners.join(" & ")}` 
+                : `${winners[0]}`;
+        
+            return { 
+                name: `${displayName}<br><small>(選了 ${maxCount} 次少數選項)</small>`, 
+                history: historyHtml 
+            };
         }
 
         window.triggerWinner = async () => {
