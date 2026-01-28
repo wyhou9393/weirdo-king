@@ -52,24 +52,24 @@
         
         const questions = [
             { r: "遊戲準備中", q: " ", a: "等待開始", b: "等待開始" },
-            { r: "第一輪 (1/8)", q: "吃不吃香菜？", a: "吃", b: "不吃" },
-            { r: "第一輪 (2/8)", q: "滷肉飯拌不拌？", a: "拌", b: "不拌" },
-            { r: "第一輪 (3/8)", q: "咖哩拌不拌？", a: "拌", b: "不拌" },
-            { r: "第一輪 (4/8)", q: "火鍋芋頭加不加？", a: "加", b: "不加" },
-            { r: "第一輪 (5/8)", q: "全糖手搖喝不喝？", a: "喝", b: "不喝" },
-            { r: "第一輪 (6/8)", q: "奶茶種類？", a: "奶精奶茶", b: "鮮奶茶" },
-            { r: "第一輪 (7/8)", q: "地獄食材？", a: "三色豆", b: "螢光咖哩" },
-            { r: "第一輪 (8/8)", q: "獵奇火鍋？", a: "越南鴨仔蛋", b: "豬腦火鍋" },
+            { r: "第一輪 (1/8)", q: "你吃不吃香菜？", a: "暴吃", b: "死都不吃" },
+            { r: "第一輪 (2/8)", q: "滷肉飯要拌嗎？", a: "拌爛", b: "肯定不拌" },
+            { r: "第一輪 (3/8)", q: "吃咖哩拌不拌？", a: "狂拌", b: "不可能拌" },
+            { r: "第一輪 (4/8)", q: "吃火鍋會加芋頭嗎？", a: "一定加", b: "絕對不加" },
+            { r: "第一輪 (5/8)", q: "全糖手搖喝不喝？", a: "狂喝猛喝", b: "有夠甜 不可能喝" },
+            { r: "第一輪 (6/8)", q: "布丁要怎麼吃？", a: "攪爛 暴風吸入", b: "用湯匙一口一口慢慢吃" },
+            { r: "第一輪 (7/8)", q: "比較喜歡哪種奶茶？", a: "奶精奶茶", b: "鮮奶茶" },
+            { r: "第一輪 (8/8)", q: "桶餐地獄...哪個好？", a: "三色豆", b: "螢光咖哩" },
             { r: "中場休息", q: "誰是目前的怪咖...", a: "統計中", b: "統計中" },
-            { r: "第二輪", q: "哪種比較好呢？", a: "安靜處必放大屁", b: "一輩子拿基本工資" },
-            { r: "第二輪", q: "外型與氣味？", a: "超好看但極臭", b: "醜但自帶香味" },
-            { r: "第二輪", q: "人生背景音？", a: "尷尬時有悲情鋼琴", b: "失敗時有罐頭笑聲" },
-            { r: "第二輪", q: "房間缺陷？", a: "門關不起來", b: "窗戶卡住半開" },
-            { r: "第二輪", q: "簡報酷刑？", a: "圖片檔且配色難看", b: "不給課後檔案" },
-            { r: "第二輪", q: "魔鬼課程？", a: "PUA環境工程", b: "當掉一半的流體力學" },
-            { r: "第二輪", q: "上課地獄？", a: "坐超臭同學旁邊", b: "教授每堂必抽問" },
-            { r: "第二輪", q: "高溫挑戰？", a: "飲水機只有43度水", b: "冷氣壞掉上三小時課" },
-            { r: "遊戲結束", q: "誰是究極怪咖王？", a: "看大螢幕", b: "看大螢幕" }
+            { r: "第二輪 (1/8)", q: "你會選擇？", a: "進圖書館跟電梯一定放大屁", b: "每次都會進錯坐滿人的教室" },
+            { r: "第二輪 (2/8)", q: "分組報告想要抽到？", a: "全程已讀不回的組員", b: "超積極但超笨的組員" },
+            { r: "第二輪 (3/8)", q: "教室的設備你能接受...？", a: "投影幕糊到像打了碼", b: "麥克風瘋狂暴音" },
+            { r: "第二輪 (4/8)", q: "你想要你每天上課的教室？", a: "門開關都超大聲", b: "玻璃窗戶卡住只能半開" },
+            { r: "第二輪 (5/8)", q: "想要哪一種課本？", a: "紅底黃字(已瞎)但思路清晰", b: "黑底白字但一大堆廢話" },
+            { r: "第二輪 (6/8)", q: "哪一堂課比較好？", a: "老師上課瘋狂PUA你", b: "至少當掉一半學生的課" },
+            { r: "第二輪 (7/8)", q: "教室只剩一個座位，你可以...", a: "坐超臭同學旁邊", b: "兩邊同學隔著你一直聊天" },
+            { r: "第二輪 (8/8)", q: "大熱天你能接受...？", a: "整天只有43度的水可以喝", b: "冷氣壞掉上三小時課" },
+            { r: "遊戲結束", q: "誰是超級怪咖王？", a: "看大螢幕", b: "看大螢幕" }
         ];
 
         // 功能 1：確認報名
@@ -105,40 +105,109 @@
             }
         });
         
-        onValue(ref(db, 'gameState/currentStep'), (snapshot) => {
-            currentStep = snapshot.val() || 0;
-            const q = questions[currentStep];
+        // 監聽整個資料庫根路徑，以便同時獲取 Step 和 Votes
+onValue(ref(db), (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
 
-            document.getElementById('round-title').innerText = q.r;
-            document.getElementById('question-text').innerText = q.q;
+    // 1. 取得最新狀態
+    currentStep = data.gameState ? data.gameState.currentStep : 0;
+    const allVotes = data.votes || {};
+    const q = questions[currentStep];
 
-            const isAlreadyJoined = document.getElementById('welcome-msg').style.display === "block";
+    // 2. 更新基礎 UI
+    document.getElementById('round-title').innerText = q.r;
+    document.getElementById('question-text').innerText = q.q;
+    const isAlreadyJoined = document.getElementById('welcome-msg').style.display === "block";
+    const statusMsg = document.getElementById('status-msg');
 
-            // 功能 4：中場休息跟結算隱藏按鈕
-            if (q.r === "中場休息" || q.r === "遊戲結束") {
-                document.getElementById('button-area').style.display = "none";
-                document.getElementById('game-container').style.backgroundColor = "#d7c79f";
-                document.getElementById('status-msg').innerText = "看大螢幕揭曉！";
-            } else {
-                document.getElementById('game-container').style.background = "";
-                if (currentStep === 0) {
-                    document.getElementById('button-area').style.display = "none";
-                    if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
-                } else {
-                    document.getElementById('input-group').style.display = "none";
-                    document.getElementById('button-area').style.display = "block";
-                    document.getElementById('btnA').innerText = q.a;
-                    document.getElementById('btnB').innerText = q.b;
-                    
-                    // 每換新的一題，重置按鈕狀態
-                    document.getElementById('btnA').disabled = false;
-                    document.getElementById('btnB').disabled = false;
-                    document.getElementById('btnA').classList.remove('selected');
-                    document.getElementById('btnB').classList.remove('selected');
-                    document.getElementById('status-msg').innerText = "請選擇！";
+    // 3. 核心邏輯：判斷顯示內容
+    if (q.r === "中場休息" || q.r === "遊戲結束") {
+        // --- 中場/結束：結算怪咖排行榜 ---
+        document.getElementById('button-area').style.display = "none";
+        document.getElementById('game-container').style.backgroundColor = "#d7c79f";
+
+        let userMinorityCount = {};
+        // 遍歷到目前為止的所有題目
+        for (let i = 1; i <= currentStep; i++) {
+            let votes = allVotes[i];
+            if (!votes) continue;
+            let countA = 0, countB = 0;
+            for (let name in votes) {
+                if (votes[name].choice === 'A') countA++; else countB++;
+            }
+            let minority = countA < countB ? 'A' : (countB < countA ? 'B' : null);
+            if (minority) {
+                for (let name in votes) {
+                    if (votes[name].choice === minority) {
+                        userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
+                    }
                 }
             }
-        });
+        }
+
+        // 找出最高分（怪咖王）
+        let winners = Object.entries(userMinorityCount).sort((a, b) => b[1] - a[1]);
+        if (winners.length > 0) {
+            let topScore = winners[0][1];
+            let topNames = winners.filter(w => w[1] === topScore).map(w => w[0]).join(", ");
+            statusMsg.innerHTML = `<span style="color:#d32f2f;">目前的怪咖王：${topNames} (${topScore}次)</span><br>` +
+                                 (playerName && userMinorityCount[playerName] ? 
+                                 `你目前累計：${userMinorityCount[playerName]} 次少數派` : `你目前是大眾臉`);
+        } else {
+            statusMsg.innerText = "大家都很正常！";
+        }
+
+    } else if (currentStep > 0) {
+        // --- 一般題目：顯示投票按鈕或揭曉本題結果 ---
+        document.getElementById('game-container').style.background = "";
+        document.getElementById('input-group').style.display = "none";
+        document.getElementById('button-area').style.display = "block";
+        document.getElementById('btnA').innerText = q.a;
+        document.getElementById('btnB').innerText = q.b;
+
+        // 檢查我這題投了沒
+        const myVoteThisStep = (allVotes[currentStep] && playerName) ? allVotes[currentStep][playerName] : null;
+
+        if (myVoteThisStep) {
+            // 我投過了，計算這題的少數派是誰
+            let countA = 0, countB = 0;
+            let thisStepVotes = allVotes[currentStep];
+            for (let name in thisStepVotes) {
+                if (thisStepVotes[name].choice === 'A') countA++; else countB++;
+            }
+
+            let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
+            
+            // 鎖定按鈕
+            document.getElementById('btnA').disabled = true;
+            document.getElementById('btnB').disabled = true;
+            document.getElementById('btnA').classList.toggle('selected', myVoteThisStep.choice === 'A');
+            document.getElementById('btnB').classList.toggle('selected', myVoteThisStep.choice === 'B');
+
+            // 顯示自己是哪一派
+            if (minorityChoice === null) {
+                statusMsg.innerText = `目前平手 (${countA} vs ${countB})`;
+            } else if (myVoteThisStep.choice === minorityChoice) {
+                statusMsg.innerHTML = `<span style="color:#ff5252; font-weight:bold;">你是少數派！(本題比數 ${countA}:${countB})</span>`;
+            } else {
+                statusMsg.innerHTML = `<span style="color:#4caf50;">你是主流多數派！(本題比數 ${countA}:${countB})</span>`;
+            }
+        } else {
+            // 還沒投票
+            document.getElementById('btnA').disabled = false;
+            document.getElementById('btnB').disabled = false;
+            document.getElementById('btnA').classList.remove('selected');
+            document.getElementById('btnB').classList.remove('selected');
+            statusMsg.innerText = "請選擇你的立場！";
+        }
+    } else {
+        // Step 0 報名階段
+        if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
+        document.getElementById('button-area').style.display = "none";
+        statusMsg.innerText = "等待主持人開始...";
+    }
+}); 
 
         // 功能 3：鎖定按鈕不可反悔
         window.vote = function(choice) {
@@ -155,6 +224,9 @@
             document.getElementById('btnA').disabled = true;
             document.getElementById('btnB').disabled = true;
             document.getElementById('status-msg').innerText = "投票成功，不可以反悔！";
+
+            // 更新 Firebase
+            update(ref(db, `votes/${currentStep}/${playerName}`), { choice: choice });
         };
     </script>
 </body>
