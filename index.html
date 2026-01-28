@@ -65,9 +65,9 @@
             { r: "第二輪 (2/8)", q: "分組報告想要抽到？", a: "全程已讀不回的組員", b: "超積極但超笨的組員" },
             { r: "第二輪 (3/8)", q: "教室的設備你能接受...？", a: "投影幕糊到像打了碼", b: "麥克風瘋狂暴音" },
             { r: "第二輪 (4/8)", q: "你想要你每天上課的教室？", a: "門開關都超大聲", b: "玻璃窗戶卡住只能半開" },
-            { r: "第二輪 (5/8)", q: "想要哪一種課本？", a: "紅底黃字(已瞎)但思路清晰", b: "黑底白字但一大堆廢話" },
+            { r: "第二輪 (5/8)", q: "想要哪一種課本？", a: "紅底黃字(已瞎)但思路清晰", b: "白底黑字但一大堆廢話" },
             { r: "第二輪 (6/8)", q: "哪一堂課比較好？", a: "老師上課瘋狂PUA你", b: "至少當掉一半學生的課" },
-            { r: "第二輪 (7/8)", q: "教室只剩一個座位，你可以...", a: "坐超臭同學旁邊", b: "兩邊同學隔著你一直聊天" },
+            { r: "第二輪 (7/8)", q: "教室只剩一個座位，你想要...", a: "坐超臭同學旁邊", b: "兩邊同學隔著你一直聊天" },
             { r: "第二輪 (8/8)", q: "大熱天你能接受...？", a: "整天只有43度的水可以喝", b: "冷氣壞掉上三小時課" },
             { r: "遊戲結束", q: "誰是超級怪咖王？", a: "看大螢幕", b: "看大螢幕" }
         ];
@@ -90,124 +90,139 @@
         // 監聽報名人數與投票人數
         onValue(ref(db), (snapshot) => {
             const data = snapshot.val();
-            if(!data) return;
+            if (!data) return;
 
-            const players = data.players ? Object.keys(data.players).length : 0;
-            const votes = (data.votes && data.votes[currentStep]) ? Object.keys(data.votes[currentStep]).length : 0;
+            // 1. 先從 Firebase 拿到最新的 currentStep，否則會抓到舊的
+            const currentStep = data.gameState ? data.gameState.currentStep : 0;
+            const isRevealed = data.gameState ? data.gameState.showResult : false; 
+            const allVotes = data.votes || {};
+            const q = questions[currentStep];
+    
+            const statusMsg = document.getElementById('status-msg');
             const countDisplay = document.getElementById('count-display');
+            const welcomeMsg = document.getElementById('welcome-msg');
+            const isAlreadyJoined = welcomeMsg.style.display === "block";
 
-            if (currentStep === 0) {
-                countDisplay.innerText = "";
-            } else if (questions[currentStep].r !== "中場休息" && questions[currentStep].r !== "遊戲結束") {
-                countDisplay.innerText = "";
-            } else {
-                countDisplay.innerText = "";
-            }
-        });
+            // 2. 處理中場休息與遊戲結束
+            if (q.r === "中場休息" || q.r === "遊戲結束") {
+                document.getElementById('button-area').style.display = "none";
+                document.getElementById('game-container').style.backgroundColor = "#d7c79f";
         
-        // 監聽整個資料庫根路徑，以便同時獲取 Step 和 Votes
-onValue(ref(db), (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
-
-    // 1. 取得最新狀態
-    currentStep = data.gameState ? data.gameState.currentStep : 0;
-    const allVotes = data.votes || {};
-    const q = questions[currentStep];
-
-    // 2. 更新基礎 UI
-    document.getElementById('round-title').innerText = q.r;
-    document.getElementById('question-text').innerText = q.q;
-    const isAlreadyJoined = document.getElementById('welcome-msg').style.display === "block";
-    const statusMsg = document.getElementById('status-msg');
-
-    // 3. 核心邏輯：判斷顯示內容
-    if (q.r === "中場休息" || q.r === "遊戲結束") {
-        // --- 中場/結束：結算怪咖排行榜 ---
-        document.getElementById('button-area').style.display = "none";
-        document.getElementById('game-container').style.backgroundColor = "#d7c79f";
-
-        let userMinorityCount = {};
-        // 遍歷到目前為止的所有題目
-        for (let i = 1; i <= currentStep; i++) {
-            let votes = allVotes[i];
-            if (!votes) continue;
-            let countA = 0, countB = 0;
-            for (let name in votes) {
-                if (votes[name].choice === 'A') countA++; else countB++;
-            }
-            let minority = countA < countB ? 'A' : (countB < countA ? 'B' : null);
-            if (minority) {
-                for (let name in votes) {
-                    if (votes[name].choice === minority) {
+                let userMinorityCount = {};
+                for (let i = 1; i <= currentStep; i++) {
+                    let stepVotes = allVotes[i];
+                    if (!stepVotes) continue;
+                    let cA = 0, cB = 0;
+                    for (let name in stepVotes) {
+                        if (stepVotes[name].choice === 'A') cA++; else cB++;
+                    }
+                    let minority = cA < cB ? 'A' : (cB < cA ? 'B' : null);
+                    if (minority) {
+                        for (let name in stepVotes) {
+                        if (stepVotes[name].choice === minority) {
                         userMinorityCount[name] = (userMinorityCount[name] || 0) + 1;
                     }
                 }
             }
         }
 
-        // 找出最高分（怪咖王）
         let winners = Object.entries(userMinorityCount).sort((a, b) => b[1] - a[1]);
         if (winners.length > 0) {
             let topScore = winners[0][1];
             let topNames = winners.filter(w => w[1] === topScore).map(w => w[0]).join(", ");
-            statusMsg.innerHTML = `<span style="color:#d32f2f;">目前的怪咖王：${topNames} (${topScore}次)</span><br>` +
+            statusMsg.innerHTML = `<span style="color:#d32f2f; font-weight:bold;">🏆 怪咖王：${topNames}</span><br>` +
                                  (playerName && userMinorityCount[playerName] ? 
                                  `你目前累計：${userMinorityCount[playerName]} 次少數派` : `你目前是大眾臉`);
         } else {
             statusMsg.innerText = "大家都很正常！";
         }
-
-    } else if (currentStep > 0) {
-        // --- 一般題目：顯示投票按鈕或揭曉本題結果 ---
+    } 
+    // 3. 處理一般題目
+    else if (currentStep > 0) {
         document.getElementById('game-container').style.background = "";
-        document.getElementById('input-group').style.display = "none";
         document.getElementById('button-area').style.display = "block";
+        document.getElementById('input-group').style.display = "none";
+        
+        // 更新按鈕文字
         document.getElementById('btnA').innerText = q.a;
         document.getElementById('btnB').innerText = q.b;
 
-        // 檢查我這題投了沒
-        const myVoteThisStep = (allVotes[currentStep] && playerName) ? allVotes[currentStep][playerName] : null;
-
-        if (myVoteThisStep) {
-            // 我投過了，計算這題的少數派是誰
-            let countA = 0, countB = 0;
-            let thisStepVotes = allVotes[currentStep];
-            for (let name in thisStepVotes) {
-                if (thisStepVotes[name].choice === 'A') countA++; else countB++;
-            }
-
-            let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
-            
-            // 鎖定按鈕
+        const thisStepVotes = allVotes[currentStep] || {};
+        const myVoteData = thisStepVotes[playerName];
+        
+        if (myVoteData) {
             document.getElementById('btnA').disabled = true;
             document.getElementById('btnB').disabled = true;
-            document.getElementById('btnA').classList.toggle('selected', myVoteThisStep.choice === 'A');
-            document.getElementById('btnB').classList.toggle('selected', myVoteThisStep.choice === 'B');
+            document.getElementById('btnA').classList.toggle('selected', myVoteData.choice === 'A');
+            document.getElementById('btnB').classList.toggle('selected', myVoteData.choice === 'B');
 
-            // 顯示自己是哪一派
-            if (minorityChoice === null) {
-                statusMsg.innerText = `目前平手 (${countA} vs ${countB})`;
-            } else if (myVoteThisStep.choice === minorityChoice) {
-                statusMsg.innerHTML = `<span style="color:#ff5252; font-weight:bold;">你是少數派！(本題比數 ${countA}:${countB})</span>`;
+            if (isRevealed) {
+                let countA = 0, countB = 0;
+                for (let name in thisStepVotes) {
+                    if (thisStepVotes[name].choice === 'A') countA++; else countB++;
+                }
+                let minorityChoice = countA < countB ? 'A' : (countB < countA ? 'B' : null);
+
+                if (minorityChoice === null) {
+                    statusMsg.innerText = `最終結果：平手 (${countA}:${countB})`;
+                } else if (myVoteData.choice === minorityChoice) {
+                    statusMsg.innerHTML = `<span style="color:#ff5252; font-weight:bold; font-size:1.2rem;">揭曉：你是少數派！😱</span><br>(比數 ${countA}:${countB})`;
+                } else {
+                    statusMsg.innerHTML = `<span style="color:#4caf50; font-weight:bold;">揭曉：你是多數派！👍</span><br>(比數 ${countA}:${countB})`;
+                }
             } else {
-                statusMsg.innerHTML = `<span style="color:#4caf50;">你是主流多數派！(本題比數 ${countA}:${countB})</span>`;
+                statusMsg.innerText = "投票成功！請等待主持人揭曉...";
             }
         } else {
-            // 還沒投票
             document.getElementById('btnA').disabled = false;
-            document.getElementById('btnB').disabled = false;
-            document.getElementById('btnA').classList.remove('selected');
-            document.getElementById('btnB').classList.remove('selected');
-            statusMsg.innerText = "請選擇你的立場！";
-        }
-    } else {
-        // Step 0 報名階段
-        if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
-        document.getElementById('button-area').style.display = "none";
-        statusMsg.innerText = "等待主持人開始...";
-    }
-}); 
+                    document.getElementById('btnB').disabled = false;
+                    document.getElementById('btnA').classList.remove('selected');
+                    document.getElementById('btnB').classList.remove('selected');
+                    statusMsg.innerText = "請選擇你的立場！";
+                }
+            } 
+            // 4. 遊戲準備階段 (Step 0)
+            else {
+                if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
+                document.getElementById('button-area').style.display = "none";
+                statusMsg.innerText = "等待主持人開始...";
+            }
+        }); // 這裡關閉 onValue
+        
+        onValue(ref(db, 'gameState/currentStep'), (snapshot) => {
+            currentStep = snapshot.val() || 0;
+            const q = questions[currentStep];
+
+            document.getElementById('round-title').innerText = q.r;
+            document.getElementById('question-text').innerText = q.q;
+
+            const isAlreadyJoined = document.getElementById('welcome-msg').style.display === "block";
+
+            // 功能 4：中場休息跟結算隱藏按鈕
+            if (q.r === "中場休息" || q.r === "遊戲結束") {
+                document.getElementById('button-area').style.display = "none";
+                document.getElementById('game-container').style.backgroundColor = "#d7c79f";
+                document.getElementById('status-msg').innerText = "看大螢幕揭曉！";
+            } else {
+                document.getElementById('game-container').style.background = "";
+                if (currentStep === 0) {
+                    document.getElementById('button-area').style.display = "none";
+                    if (!isAlreadyJoined) document.getElementById('input-group').style.display = "block";
+                } else {
+                    document.getElementById('input-group').style.display = "none";
+                    document.getElementById('button-area').style.display = "block";
+                    document.getElementById('btnA').innerText = q.a;
+                    document.getElementById('btnB').innerText = q.b;
+                    
+                    // 每換新的一題，重置按鈕狀態
+                    document.getElementById('btnA').disabled = false;
+                    document.getElementById('btnB').disabled = false;
+                    document.getElementById('btnA').classList.remove('selected');
+                    document.getElementById('btnB').classList.remove('selected');
+                    document.getElementById('status-msg').innerText = "請選擇！";
+                }
+            }
+        });
 
         // 功能 3：鎖定按鈕不可反悔
         window.vote = function(choice) {
@@ -224,9 +239,6 @@ onValue(ref(db), (snapshot) => {
             document.getElementById('btnA').disabled = true;
             document.getElementById('btnB').disabled = true;
             document.getElementById('status-msg').innerText = "投票成功，不可以反悔！";
-
-            // 更新 Firebase
-            update(ref(db, `votes/${currentStep}/${playerName}`), { choice: choice });
         };
     </script>
 </body>
